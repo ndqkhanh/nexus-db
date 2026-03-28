@@ -1698,6 +1698,53 @@ graph LR
     </div>
   </footer>
 
+  <!-- USE CASES SECTION -->
+  <section id="use-cases" style="padding: 80px 0; background: #0e1420;">
+    <div class="container">
+      <p class="section-eyebrow reveal" style="color: #4A90D9; font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 12px;">Real-World Applications</p>
+      <h2 class="reveal" style="font-family: 'DM Serif Display', serif; font-size: clamp(28px, 4vw, 40px); color: #e8edf5; margin-bottom: 40px;">When to Use NexusDB</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+
+        <div class="reveal" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px; transition: border-color 0.3s;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">01</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Embedded Transactional Store</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">When your application needs an embedded database with full ACID transactions — like SQLite but with concurrent access and MVCC. Think: desktop apps, CLI tools, or microservices that need local persistent state without deploying a separate database server.</p>
+        </div>
+
+        <div class="reveal reveal-delay-1" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px; transition: border-color 0.3s;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">02</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Hot-Key Workloads</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">Systems where some keys receive 100x more writes than others — e-commerce inventory counts, rate limiters, leaderboards. NexusDB's adaptive lock elision automatically switches to pessimistic locking only on the hot keys while keeping cold keys lock-free.</p>
+        </div>
+
+        <div class="reveal reveal-delay-2" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px; transition: border-color 0.3s;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">03</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Financial Transaction Processing</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">When you need SSI (Serializable Snapshot Isolation) to prevent write skew and phantom reads — banking ledgers, double-entry accounting, trading systems. NexusDB detects anomalies at every isolation level and aborts dangerous transactions automatically.</p>
+        </div>
+
+        <div class="reveal reveal-delay-3" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px; transition: border-color 0.3s;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">04</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Crash-Safe State Machines</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">Any system that must survive process crashes without data loss — workflow engines, job schedulers, IoT gateways. The WAL with ARIES redo/undo guarantees committed transactions survive crashes, and recovery is automatic on restart.</p>
+        </div>
+
+        <div class="reveal reveal-delay-4" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px; transition: border-color 0.3s;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">05</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Read-Heavy Analytics with Concurrent Writes</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">MVCC lets readers never block writers and vice versa. Ideal for dashboards querying live data, real-time reporting on operational databases, or search indexes that update while serving queries — each reader sees a consistent snapshot without locking.</p>
+        </div>
+
+        <div class="reveal reveal-delay-4" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px; transition: border-color 0.3s;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">06</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Learning & Reference Implementation</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">A production-quality reference for database internals — version chains, epoch GC, B-Tree crabbing, WAL recovery, SSI validation. Useful for engineers studying concurrency control, building custom storage engines, or preparing for systems design interviews.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <script>
     // ===========================
     // Mermaid init
