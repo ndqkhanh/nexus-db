@@ -2,7 +2,6 @@ package nexusdb.storage;
 
 import nexusdb.mvcc.VersionChain;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 
 import static org.assertj.core.api.Assertions.*;
 
