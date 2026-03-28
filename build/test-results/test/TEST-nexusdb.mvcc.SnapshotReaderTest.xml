@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="nexusdb.mvcc.SnapshotReaderTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-03-28T01:31:08" hostname="MacBook-Pro-cua-Khanh.local" time="0.054">
+  <properties/>
+  <testcase name="Read returns null for deletion tombstone" classname="nexusdb.mvcc.SnapshotReaderTest" time="0.0"/>
+  <testcase name="Concurrent reads do not block each other" classname="nexusdb.mvcc.SnapshotReaderTest" time="0.001"/>
+  <testcase name="Read from empty chain returns null" classname="nexusdb.mvcc.SnapshotReaderTest" time="0.0"/>
+  <testcase name="Read skips ACTIVE versions" classname="nexusdb.mvcc.SnapshotReaderTest" time="0.0"/>
+  <testcase name="Read falls back to read lock when write lock is held" classname="nexusdb.mvcc.SnapshotReaderTest" time="0.051"/>
+  <testcase name="Read returns committed version visible at snapshot" classname="nexusdb.mvcc.SnapshotReaderTest" time="0.001"/>
+  <testcase name="Read skips versions committed after snapshot timestamp" classname="nexusdb.mvcc.SnapshotReaderTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="nexusdb.integration.SnapshotIsolationAcceptanceTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-03-28T01:31:08" hostname="MacBook-Pro-cua-Khanh.local" time="0.006">
+  <properties/>
+  <testcase name="Snapshot isolation: concurrent readers do not block each other" classname="nexusdb.integration.SnapshotIsolationAcceptanceTest" time="0.003"/>
+  <testcase name="Snapshot isolation: write-write conflict results in first-committer-wins" classname="nexusdb.integration.SnapshotIsolationAcceptanceTest" time="0.001"/>
+  <testcase name="Snapshot isolation: new transaction sees committed writes from completed transactions" classname="nexusdb.integration.SnapshotIsolationAcceptanceTest" time="0.001"/>
+  <testcase name="Snapshot isolation: concurrent readers see consistent snapshot across multiple keys" classname="nexusdb.integration.SnapshotIsolationAcceptanceTest" time="0.0"/>
+  <testcase name="Snapshot isolation: reader does not see writes committed after its begin()" classname="nexusdb.integration.SnapshotIsolationAcceptanceTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

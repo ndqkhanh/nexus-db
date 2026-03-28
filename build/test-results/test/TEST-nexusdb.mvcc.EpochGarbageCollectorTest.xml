@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="nexusdb.mvcc.EpochGarbageCollectorTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-03-28T01:31:08" hostname="MacBook-Pro-cua-Khanh.local" time="0.061">
+  <properties/>
+  <testcase name="Epoch does NOT advance past a reader still in a previous epoch" classname="nexusdb.mvcc.EpochGarbageCollectorTest" time="0.002"/>
+  <testcase name="Epoch advances when no active readers exist" classname="nexusdb.mvcc.EpochGarbageCollectorTest" time="0.0"/>
+  <testcase name="Multiple concurrent readers: epoch blocked when any reader lags behind" classname="nexusdb.mvcc.EpochGarbageCollectorTest" time="0.055"/>
+  <testcase name="retire + gcSweep is thread-safe under concurrent access" classname="nexusdb.mvcc.EpochGarbageCollectorTest" time="0.002"/>
+  <testcase name="Initial global epoch is 0" classname="nexusdb.mvcc.EpochGarbageCollectorTest" time="0.001"/>
+  <testcase name="Retired version is reclaimed after 2 epoch advances" classname="nexusdb.mvcc.EpochGarbageCollectorTest" time="0.0"/>
+  <testcase name="enterEpoch returns current global epoch" classname="nexusdb.mvcc.EpochGarbageCollectorTest" time="0.0"/>
+  <testcase name="Retired version is NOT reclaimed while reader from that epoch is still lagging" classname="nexusdb.mvcc.EpochGarbageCollectorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

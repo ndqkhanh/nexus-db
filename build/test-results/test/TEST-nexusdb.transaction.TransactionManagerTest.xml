@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="nexusdb.transaction.TransactionManagerTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-03-28T01:31:08" hostname="MacBook-Pro-cua-Khanh.local" time="0.004">
+  <properties/>
+  <testcase name="put then get within same transaction returns the written value" classname="nexusdb.transaction.TransactionManagerTest" time="0.0"/>
+  <testcase name="Aborted value is NOT visible to new transaction" classname="nexusdb.transaction.TransactionManagerTest" time="0.0"/>
+  <testcase name="Non-conflicting writes on different keys both commit successfully" classname="nexusdb.transaction.TransactionManagerTest" time="0.0"/>
+  <testcase name="Delete makes key invisible to subsequent transactions" classname="nexusdb.transaction.TransactionManagerTest" time="0.001"/>
+  <testcase name="begin() assigns monotonically increasing snapshot timestamps" classname="nexusdb.transaction.TransactionManagerTest" time="0.0"/>
+  <testcase name="begin() returns a transaction with unique monotonic ID" classname="nexusdb.transaction.TransactionManagerTest" time="0.0"/>
+  <testcase name="Committed value is visible to new transaction" classname="nexusdb.transaction.TransactionManagerTest" time="0.001"/>
+  <testcase name="Snapshot isolation: reader does not see concurrent write committed after its begin" classname="nexusdb.transaction.TransactionManagerTest" time="0.0"/>
+  <testcase name="Multiple puts to same key within transaction: last write wins" classname="nexusdb.transaction.TransactionManagerTest" time="0.0"/>
+  <testcase name="Write-write conflict: first committer wins, second is aborted" classname="nexusdb.transaction.TransactionManagerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

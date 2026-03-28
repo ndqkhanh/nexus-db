@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="nexusdb.concurrency.ContentionMonitorTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-03-28T01:31:08" hostname="MacBook-Pro-cua-Khanh.local" time="0.009">
+  <properties/>
+  <testcase name="Hysteresis: mode stays LOCK when ratio is between 15% and 30%" classname="nexusdb.concurrency.ContentionMonitorTest" time="0.0"/>
+  <testcase name="Mode stays CAS when all operations succeed" classname="nexusdb.concurrency.ContentionMonitorTest" time="0.0"/>
+  <testcase name="Different keys in different ranges can have different modes" classname="nexusdb.concurrency.ContentionMonitorTest" time="0.0"/>
+  <testcase name="Concurrent recordOutcome calls are thread-safe" classname="nexusdb.concurrency.ContentionMonitorTest" time="0.003"/>
+  <testcase name="getContentionRatio returns ratio for a key's range" classname="nexusdb.concurrency.ContentionMonitorTest" time="0.002"/>
+  <testcase name="Escalates to LOCK when failure ratio exceeds 30%" classname="nexusdb.concurrency.ContentionMonitorTest" time="0.0"/>
+  <testcase name="Does NOT escalate before minimum samples reached" classname="nexusdb.concurrency.ContentionMonitorTest" time="0.001"/>
+  <testcase name="De-escalates back to CAS when failure ratio drops below 15%" classname="nexusdb.concurrency.ContentionMonitorTest" time="0.0"/>
+  <testcase name="Initial mode for any key is CAS (optimistic)" classname="nexusdb.concurrency.ContentionMonitorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

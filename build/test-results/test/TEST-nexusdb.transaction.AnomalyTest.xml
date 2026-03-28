@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="nexusdb.transaction.AnomalyTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-03-28T01:31:08" hostname="MacBook-Pro-cua-Khanh.local" time="0.003">
+  <properties/>
+  <testcase name="Anomaly 4: Write skew — SI allows it (SSI will prevent in Phase 2)" classname="nexusdb.transaction.AnomalyTest" time="0.0"/>
+  <testcase name="Anomaly 1: No dirty reads — uncommitted writes are invisible" classname="nexusdb.transaction.AnomalyTest" time="0.0"/>
+  <testcase name="Anomaly 2: No non-repeatable reads — snapshot is frozen at begin()" classname="nexusdb.transaction.AnomalyTest" time="0.001"/>
+  <testcase name="Anomaly 5: No lost update — first-committer-wins prevents it" classname="nexusdb.transaction.AnomalyTest" time="0.0"/>
+  <testcase name="Anomaly 3: No phantom reads — new keys inserted after snapshot are invisible" classname="nexusdb.transaction.AnomalyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

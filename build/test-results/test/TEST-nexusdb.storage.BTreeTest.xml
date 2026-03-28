@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="nexusdb.storage.BTreeTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-03-28T01:31:08" hostname="MacBook-Pro-cua-Khanh.local" time="0.029">
+  <properties/>
+  <testcase name="rangeScanEmptyRange()" classname="nexusdb.storage.BTreeTest" time="0.001"/>
+  <testcase name="concurrentInsertsAreThreadSafe()" classname="nexusdb.storage.BTreeTest" time="0.013"/>
+  <testcase name="putAndGetSingleKey()" classname="nexusdb.storage.BTreeTest" time="0.0"/>
+  <testcase name="concurrentReadsAndWritesAreThreadSafe()" classname="nexusdb.storage.BTreeTest" time="0.007"/>
+  <testcase name="manyInsertionsAllRetrievable()" classname="nexusdb.storage.BTreeTest" time="0.005"/>
+  <testcase name="getReturnsNullForEmptyTree()" classname="nexusdb.storage.BTreeTest" time="0.0"/>
+  <testcase name="putMultipleKeysAndRetrieve()" classname="nexusdb.storage.BTreeTest" time="0.001"/>
+  <testcase name="computeIfAbsentReturnsSameChainOnSecondCall()" classname="nexusdb.storage.BTreeTest" time="0.0"/>
+  <testcase name="rangeScanAllKeys()" classname="nexusdb.storage.BTreeTest" time="0.0"/>
+  <testcase name="insertsBeyondOrderTriggerSplit()" classname="nexusdb.storage.BTreeTest" time="0.001"/>
+  <testcase name="rangeScanReturnsKeysInOrder()" classname="nexusdb.storage.BTreeTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

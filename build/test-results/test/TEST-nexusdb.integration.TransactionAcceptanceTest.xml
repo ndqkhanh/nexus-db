@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="nexusdb.integration.TransactionAcceptanceTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-03-28T01:31:08" hostname="MacBook-Pro-cua-Khanh.local" time="0.004">
+  <properties/>
+  <testcase name="Non-existent key returns null" classname="nexusdb.integration.TransactionAcceptanceTest" time="0.0"/>
+  <testcase name="Read-your-own-writes: uncommitted write is visible within the same transaction" classname="nexusdb.integration.TransactionAcceptanceTest" time="0.0"/>
+  <testcase name="Overwrite: later committed write replaces earlier committed write" classname="nexusdb.integration.TransactionAcceptanceTest" time="0.0"/>
+  <testcase name="Delete: committed delete makes key invisible" classname="nexusdb.integration.TransactionAcceptanceTest" time="0.0"/>
+  <testcase name="Multiple keys: independent key-value pairs in single transaction" classname="nexusdb.integration.TransactionAcceptanceTest" time="0.001"/>
+  <testcase name="Aborted transaction: writes are not visible to subsequent transactions" classname="nexusdb.integration.TransactionAcceptanceTest" time="0.0"/>
+  <testcase name="Transaction IDs are monotonically increasing" classname="nexusdb.integration.TransactionAcceptanceTest" time="0.002"/>
+  <testcase name="Basic put-commit-get: written value is visible to subsequent transaction" classname="nexusdb.integration.TransactionAcceptanceTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
