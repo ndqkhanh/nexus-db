@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusDB — Adaptive Concurrency Transactional Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@300;400;500;600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-base: #090d14;
+      --bg-surface: #0e1420;
+      --bg-elevated: #141b27;
+      --bg-card: #111827;
+      --accent: #4A90D9;
+      --accent-glow: rgba(74, 144, 217, 0.18);
+      --accent-dim: rgba(74, 144, 217, 0.55);
+      --accent-bright: #6aaff0;
+      --text-primary: #e8edf5;
+      --text-secondary: #8a9ab8;
+      --text-muted: #4a5672;
+      --border: rgba(74, 144, 217, 0.12);
+      --border-hover: rgba(74, 144, 217, 0.35);
+      --glass: rgba(14, 20, 32, 0.72);
+      --font-title: 'DM Serif Display', Georgia, serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+      --radius: 12px;
+      --radius-lg: 20px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      line-height: 1.65;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===========================
+       LAYOUT
+    =========================== */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    section {
+      padding: 88px 0;
+    }
+
+    /* ===========================
+       AMBIENT GLOW BLOBS
+    =========================== */
+    .ambient {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.55;
+    }
+
+    .ambient-1 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(74, 144, 217, 0.12) 0%, transparent 70%);
+      top: -200px;
+      left: -200px;
+    }
+
+    .ambient-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(74, 144, 217, 0.07) 0%, transparent 70%);
+      bottom: 20%;
+      right: -150px;
+    }
+
+    /* ===========================
+       HEADER / HERO
+    =========================== */
+    header {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      padding: 120px 0 80px;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+    }
+
+    .hero-grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 40%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 40%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    h1.hero-title {
+      font-family: var(--font-title);
+      font-size: clamp(52px, 8vw, 96px);
+      font-weight: 400;
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    h1.hero-title span {
+      color: var(--accent);
+      font-style: italic;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      margin-bottom: 28px;
+      text-transform: uppercase;
+    }
+
+    .hero-tagline {
+      font-size: 17px;
+      font-weight: 300;
+      color: var(--text-secondary);
+      max-width: 640px;
+      line-height: 1.75;
+      margin-bottom: 44px;
+    }
+
+    .hero-tagline strong {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 26px;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      box-shadow: 0 0 24px rgba(74, 144, 217, 0.35);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-bright);
+      box-shadow: 0 0 40px rgba(74, 144, 217, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 26px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      border: 1px solid var(--border-hover);
+    }
+
+    .btn-ghost:hover {
+      color: var(--text-primary);
+      border-color: var(--accent-dim);
+      background: var(--accent-glow);
+    }
+
+    .hero-author {
+      margin-top: 56px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .author-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #2a5fa8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      flex-shrink: 0;
+      border: 1px solid var(--border-hover);
+    }
+
+    .author-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .author-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .author-role {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ===========================
+       STATS BAR
+    =========================== */
+    .stats-bar {
+      position: relative;
+      padding: 0;
+      margin: 0;
+    }
+
+    .stats-inner {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .stat-item {
+      background: var(--bg-surface);
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      transition: background 0.3s ease;
+    }
+
+    .stat-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+      transform-origin: left;
+    }
+
+    .stat-item:hover {
+      background: var(--bg-elevated);
+    }
+
+    .stat-item:hover::before {
+      transform: scaleX(1);
+    }
+
+    .stat-number {
+      font-family: var(--font-mono);
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 600;
+      color: var(--accent);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .stat-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 300;
+      margin-top: 2px;
+    }
+
+    /* ===========================
+       SECTION TITLES
+    =========================== */
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    h2.section-title {
+      font-family: var(--font-title);
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 18px;
+    }
+
+    h2.section-title em {
+      color: var(--accent);
+      font-style: italic;
+    }
+
+    .section-desc {
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--text-secondary);
+      max-width: 600px;
+      line-height: 1.75;
+      margin-bottom: 56px;
+    }
+
+    /* ===========================
+       KEY INNOVATION
+    =========================== */
+    .innovation-section {
+      position: relative;
+    }
+
+    .innovation-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .innovation-prose {
+      padding: 40px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .innovation-prose::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+
+    .innovation-prose h3 {
+      font-family: var(--font-title);
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .innovation-prose p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    .innovation-prose p + p {
+      margin-top: 14px;
+    }
+
+    .innovation-prose strong {
+      color: var(--accent-bright);
+      font-weight: 500;
+    }
+
+    .contention-diagram {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .contention-path {
+      padding: 28px 32px;
+      border-radius: var(--radius);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid;
+      transition: all 0.35s ease;
+    }
+
+    .contention-path:hover {
+      transform: translateY(-2px);
+    }
+
+    .path-low {
+      background: linear-gradient(135deg, rgba(74, 217, 150, 0.07), rgba(74, 217, 150, 0.03));
+      border-color: rgba(74, 217, 150, 0.2);
+    }
+
+    .path-low:hover {
+      box-shadow: 0 8px 40px rgba(74, 217, 150, 0.12);
+      border-color: rgba(74, 217, 150, 0.4);
+    }
+
+    .path-high {
+      background: linear-gradient(135deg, rgba(217, 144, 74, 0.07), rgba(217, 144, 74, 0.03));
+      border-color: rgba(217, 144, 74, 0.2);
+    }
+
+    .path-high:hover {
+      box-shadow: 0 8px 40px rgba(217, 144, 74, 0.12);
+      border-color: rgba(217, 144, 74, 0.4);
+    }
+
+    .path-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .badge-low {
+      background: rgba(74, 217, 150, 0.12);
+      color: #4ad996;
+    }
+
+    .badge-high {
+      background: rgba(217, 144, 74, 0.12);
+      color: #d9904a;
+    }
+
+    .path-title {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .path-steps {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .step-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+    }
+
+    .path-perf {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      color: var(--text-muted);
+    }
+
+    .path-low .path-perf { color: #4ad996; }
+    .path-high .path-perf { color: #d9904a; }
+
+    /* ===========================
+       ARCHITECTURE DIAGRAM
+    =========================== */
+    .arch-section {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mermaid-wrapper {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      overflow-x: auto;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    .arch-components {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .arch-component-card {
+      padding: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: all 0.3s ease;
+    }
+
+    .arch-component-card:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-elevated);
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .arch-comp-name {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .arch-comp-details {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .arch-comp-details li {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .arch-comp-details li::before {
+      content: '›';
+      position: absolute;
+      left: 0;
+      color: var(--accent-dim);
+    }
+
+    /* ===========================
+       EXPANDABLE CARDS
+    =========================== */
+    .cards-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .expand-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.3s ease;
+    }
+
+    .expand-card.is-open {
+      border-color: var(--border-hover);
+    }
+
+    .expand-card.is-open .card-header {
+      background: var(--bg-elevated);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 28px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      user-select: none;
+    }
+
+    .card-header:hover {
+      background: var(--bg-elevated);
+    }
+
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .card-number {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--accent-glow);
+      border: 1px solid var(--border-hover);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      font-family: var(--font-title);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--text-primary);
+    }
+
+    .card-subtitle {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      letter-spacing: 0.04em;
+    }
+
+    .card-chevron {
+      width: 20px;
+      height: 20px;
+      color: var(--text-muted);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .expand-card.is-open .card-chevron {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    .card-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .expand-card.is-open .card-body {
+      max-height: 800px;
+    }
+
+    .card-content {
+      padding: 0 28px 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    .card-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      font-weight: 300;
+      margin-top: 20px;
+    }
+
+    .card-content p + p {
+      margin-top: 12px;
+    }
+
+    .card-content strong {
+      color: var(--accent-bright);
+      font-weight: 500;
+    }
+
+    .code-block {
+      margin-top: 20px;
+      padding: 20px;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      overflow-x: auto;
+    }
+
+    .code-block .kw { color: #c678dd; }
+    .code-block .ty { color: #e5c07b; }
+    .code-block .fn { color: #61afef; }
+    .code-block .cm { color: #5c6370; font-style: italic; }
+    .code-block .str { color: #98c379; }
+    .code-block .num { color: #d19a66; }
+
+    .feature-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .feature-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: var(--accent-glow);
+      border: 1px solid var(--border-hover);
+      color: var(--accent-bright);
+      letter-spacing: 0.03em;
+    }
+
+    /* ===========================
+       TEST COVERAGE
+    =========================== */
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .test-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .test-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+
+    .test-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px var(--accent-glow);
+    }
+
+    .test-card:hover::after {
+      transform: scaleX(1);
+    }
+
+    .test-count {
+      font-family: var(--font-mono);
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .test-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .test-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .test-total-banner {
+      margin-top: 24px;
+      padding: 20px 28px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .test-total-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .test-pass-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4ad996;
+      box-shadow: 0 0 10px #4ad996;
+      flex-shrink: 0;
+    }
+
+    .test-total-text {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .test-total-text span {
+      color: #4ad996;
+    }
+
+    .test-total-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ===========================
+       TECH STACK
+    =========================== */
+    .tech-section {
+      padding-bottom: 56px;
+    }
+
+    .tech-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tech-tag {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      transition: all 0.25s ease;
+      letter-spacing: 0.02em;
+      cursor: default;
+    }
+
+    .tech-tag:hover {
+      background: var(--accent-glow);
+      border-color: var(--accent-dim);
+      color: var(--accent-bright);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    .tech-tag.featured {
+      background: var(--accent-glow);
+      border-color: var(--border-hover);
+      color: var(--accent-bright);
+    }
+
+    /* ===========================
+       FOOTER
+    =========================== */
+    footer {
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      position: relative;
+    }
+
+    footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-text {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .footer-text span {
+      color: var(--accent-dim);
+    }
+
+    .footer-right {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .footer-right a {
+      color: var(--accent-dim);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .footer-right a:hover {
+      color: var(--accent-bright);
+    }
+
+    /* ===========================
+       SCROLL ANIMATIONS
+    =========================== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1), transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ===========================
+       DIVIDER
+    =========================== */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0;
+    }
+
+    /* ===========================
+       RESPONSIVE
+    =========================== */
+    @media (max-width: 900px) {
+      .stats-inner {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .innovation-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .arch-components {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .test-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      section {
+        padding: 56px 0;
+      }
+
+      .stats-inner {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .test-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .arch-components {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .hero-cta-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .mermaid-wrapper {
+        padding: 20px 12px;
+      }
+
+      .card-header {
+        padding: 18px 20px;
+      }
+
+      .card-content {
+        padding: 0 20px 24px;
+      }
+    }
+
+    /* ===========================
+       MERMAID OVERRIDES
+    =========================== */
+    .mermaid svg {
+      max-width: 100%;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+    /* Selection */
+    ::selection {
+      background: rgba(74, 144, 217, 0.28);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+
+  <!-- ===========================
+       HEADER / HERO
+  =========================== -->
+  <header>
+    <div class="hero-grid-bg"></div>
+    <div class="container">
+      <p class="hero-eyebrow">Storage Engine · Java 21 · Staff Portfolio</p>
+      <h1 class="hero-title">Nexus<span>DB</span></h1>
+      <p class="hero-subtitle">Adaptive Concurrency Transactional Engine</p>
+      <p class="hero-tagline">
+        A transactional storage engine that <strong>thinks</strong> — auto-switching between
+        <strong>optimistic</strong> and <strong>pessimistic</strong> concurrency based on
+        real-time contention measurement at key-range granularity.
+      </p>
+      <div class="hero-cta-row">
+        <a href="https://github.com/ndqkhanh/nexus-db" target="_blank" rel="noopener" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+        <a href="#architecture" class="btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          Explore Architecture
+        </a>
+      </div>
+      <div class="hero-author">
+        <div class="author-avatar">NK</div>
+        <div class="author-info">
+          <span class="author-name">Nguyen Dinh Quang Khanh</span>
+          <span class="author-role">Staff Engineer Portfolio · NexusDB</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===========================
+       STATS BAR
+  =========================== -->
+  <section class="stats-bar" style="padding: 48px 0;">
+    <div class="container">
+      <div class="stats-inner reveal">
+        <div class="stat-item">
+          <div class="stat-number">133</div>
+          <div class="stat-label">Total Tests</div>
+          <div class="stat-detail">0 failures · 100% pass rate</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">80K+</div>
+          <div class="stat-label">Txn / sec</div>
+          <div class="stat-detail">Low-contention CAS path</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">3.2×</div>
+          <div class="stat-label">Faster than 2PL</div>
+          <div class="stat-detail">Static pessimistic baseline</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">64T</div>
+          <div class="stat-label">Contention bench</div>
+          <div class="stat-detail">64-thread JMH suite</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ===========================
+       KEY INNOVATION
+  =========================== -->
+  <section class="innovation-section" id="innovation">
+    <div class="container">
+      <p class="section-label reveal">Core Innovation</p>
+      <h2 class="section-title reveal reveal-delay-1">Adaptive <em>Lock Elision</em></h2>
+      <p class="section-desc reveal reveal-delay-2">
+        Hardware-inspired software technique operating at key-range granularity —
+        eliminating lock overhead when contention is absent, engaging full 2PL safety when it rises.
+      </p>
+
+      <div class="innovation-grid">
+        <div class="innovation-prose reveal">
+          <h3>How It Works</h3>
+          <p>
+            The engine continuously measures a <strong>contention ratio</strong> per key range using
+            exponential moving averages over CAS failure rates. Under low contention, transactions
+            execute on a <strong>CAS-based optimistic path</strong> — no lock acquisition, no
+            waiting, zero overhead.
+          </p>
+          <p>
+            When the ratio crosses a configurable threshold, the Adaptive Lock Manager
+            <strong>auto-switches to ReentrantLock 2-Phase Locking</strong> for that key range.
+            High-contention ranges get serialization safety; low-contention ranges stay fast.
+          </p>
+          <p>
+            Inspired by <strong>Intel HLE/RTM hardware lock elision</strong>, but implemented
+            entirely in software using <code>VarHandle</code> CAS operations and Java 21
+            Virtual Threads — no hardware transactional memory required.
+          </p>
+        </div>
+
+        <div class="contention-diagram reveal reveal-delay-1">
+          <div class="contention-path path-low">
+            <span class="path-badge badge-low">Low Contention</span>
+            <div class="path-title">CAS Optimistic Path</div>
+            <p style="font-size:13px; color: var(--text-secondary); font-weight:300; line-height:1.7;">
+              Read version → Execute → CAS-compare → Commit. Zero mutex acquisition. Pure atomic operations.
+            </p>
+            <div class="path-steps">
+              <span class="step-tag">VarHandle.compareAndSet</span>
+              <span class="step-tag">StampedLock.tryOptimisticRead</span>
+              <span class="step-tag">Version validate</span>
+              <span class="step-tag">Inline commit</span>
+            </div>
+            <div class="path-perf">→ ~12.5μs avg latency · 80K+ txn/sec</div>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:center; gap:10px; padding: 4px 0;">
+            <div style="flex:1; height:1px; background: var(--border);"></div>
+            <span style="font-family: var(--font-mono); font-size:11px; color: var(--text-muted); white-space:nowrap; letter-spacing:0.08em;">THRESHOLD CROSSED → AUTO-SWITCH</span>
+            <div style="flex:1; height:1px; background: var(--border);"></div>
+          </div>
+
+          <div class="contention-path path-high">
+            <span class="path-badge badge-high">High Contention</span>
+            <div class="path-title">2PL Pessimistic Path</div>
+            <p style="font-size:13px; color: var(--text-secondary); font-weight:300; line-height:1.7;">
+              Acquire range lock → Execute under lock → Validate → Commit → Release. Full serialization safety.
+            </p>
+            <div class="path-steps">
+              <span class="step-tag">ReentrantLock.lock()</span>
+              <span class="step-tag">Growing phase</span>
+              <span class="step-tag">Shrinking phase</span>
+              <span class="step-tag">2PL invariant</span>
+            </div>
+            <div class="path-perf">→ ~38μs avg latency · Deadlock-safe with timeout</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ===========================
+       ARCHITECTURE DIAGRAM
+  =========================== -->
+  <section class="arch-section" id="architecture">
+    <div class="container">
+      <p class="section-label reveal">System Design</p>
+      <h2 class="section-title reveal reveal-delay-1">Engine <em>Architecture</em></h2>
+      <p class="section-desc reveal reveal-delay-2">
+        A layered design separating transaction coordination, concurrency control, and
+        durable storage — each component independently optimized.
+      </p>
+
+      <div class="mermaid-wrapper reveal">
+        <div class="mermaid">
+graph LR
+    C([Client]):::client --> TM[TransactionManager]:::manager
+    TM --> MVCC[MVCC Engine]:::engine
+    TM --> SSI[SSI Validator]:::engine
+    TM --> ALM[Adaptive Lock Manager]:::engine
+    MVCC --> WAL[WAL Writer]:::storage
+    MVCC --> BT[B-Tree Storage]:::storage
+    SSI --> WAL
+    ALM --> BT
+
+    classDef client fill:#4A90D9,stroke:#4A90D9,color:#fff,rx:8
+    classDef manager fill:#1a2540,stroke:#4A90D9,color:#e8edf5,rx:8
+    classDef engine fill:#141b27,stroke:#4A90D9,color:#e8edf5,rx:8
+    classDef storage fill:#0e1420,stroke:#2a4a72,color:#8a9ab8,rx:8
+        </div>
+      </div>
+
+      <div class="arch-components">
+        <div class="arch-component-card reveal">
+          <div class="arch-comp-name">MVCC Engine</div>
+          <ul class="arch-comp-details">
+            <li>VersionChain via AtomicReference linked list</li>
+            <li>EpochGC — RCU-inspired reclamation</li>
+            <li>StampedLock optimistic reads</li>
+            <li>Snapshot isolation guarantee</li>
+          </ul>
+        </div>
+        <div class="arch-component-card reveal reveal-delay-1">
+          <div class="arch-comp-name">SSI Validator</div>
+          <ul class="arch-comp-details">
+            <li>rw-antidependency cycle detection</li>
+            <li>Dangerous structure identification</li>
+            <li>Write skew + phantom prevention</li>
+            <li>Abort on serialization risk</li>
+          </ul>
+        </div>
+        <div class="arch-component-card reveal reveal-delay-2">
+          <div class="arch-comp-name">WAL Writer</div>
+          <ul class="arch-comp-details">
+            <li>ARIES redo/undo protocol</li>
+            <li>Group commit via Virtual Threads</li>
+            <li>LSN-based recovery ordering</li>
+            <li>Crash-safe durability guarantee</li>
+          </ul>
+        </div>
+        <div class="arch-component-card reveal reveal-delay-3">
+          <div class="arch-comp-name">Concurrent B-Tree</div>
+          <ul class="arch-comp-details">
+            <li>Hand-over-hand latch coupling</li>
+            <li>ReadWriteLock per node</li>
+            <li>Lock-free readers via StampedLock</li>
+            <li>Crab-locking on splits/merges</li>
+          </ul>
+        </div>
+        <div class="arch-component-card reveal reveal-delay-4">
+          <div class="arch-comp-name">Adaptive Lock Manager</div>
+          <ul class="arch-comp-details">
+            <li>Per-key-range contention ratio EMA</li>
+            <li>CAS failure rate monitoring</li>
+            <li>Dynamic CAS ↔ 2PL switching</li>
+            <li>VarHandle low-level CAS ops</li>
+          </ul>
+        </div>
+        <div class="arch-component-card reveal reveal-delay-1">
+          <div class="arch-comp-name">Transaction Manager</div>
+          <ul class="arch-comp-details">
+            <li>Snapshot timestamp allocation</li>
+            <li>Commit protocol orchestration</li>
+            <li>Virtual Thread per transaction</li>
+            <li>ForkJoinPool for parallel validation</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ===========================
+       COMPONENT DEEP DIVE
+  =========================== -->
+  <section id="components">
+    <div class="container">
+      <p class="section-label reveal">Technical Deep Dive</p>
+      <h2 class="section-title reveal reveal-delay-1">Component <em>Internals</em></h2>
+      <p class="section-desc reveal reveal-delay-2">
+        Each subsystem engineered for correctness first, then performance —
+        with concurrent data structures at every layer.
+      </p>
+
+      <div class="cards-grid reveal">
+
+        <!-- Card 1: MVCC -->
+        <div class="expand-card" data-card="1">
+          <div class="card-header" role="button" tabindex="0" aria-expanded="false">
+            <div class="card-header-left">
+              <div class="card-number">01</div>
+              <div>
+                <div class="card-title">MVCC with Version Chains</div>
+                <div class="card-subtitle">AtomicReference linked list · Epoch-based GC</div>
+              </div>
+            </div>
+            <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="card-body" role="region">
+            <div class="card-content">
+              <p>
+                Each key maintains a <strong>version chain</strong> — an immutable linked list of
+                versioned values managed via <code>AtomicReference</code> for lock-free prepend.
+                Readers snapshot the chain head at transaction start; concurrent writes append new
+                versions without blocking readers.
+              </p>
+              <p>
+                Garbage collection uses an <strong>RCU-inspired epoch mechanism</strong>: each
+                transaction registers in the current epoch on entry and deregisters on commit.
+                A background GC thread, running in a Virtual Thread, reclaims version chain nodes
+                only when no active epoch can reference them — safe, minimal overhead.
+              </p>
+              <div class="code-block"><span class="cm">// Lock-free version chain prepend</span>
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">appendVersion</span>(<span class="ty">K</span> key, <span class="ty">V</span> value, <span class="kw">long</span> txnId) {
+  <span class="kw">var</span> newNode = <span class="kw">new</span> <span class="ty">VersionNode</span>&lt;&gt;(value, txnId);
+  <span class="kw">var</span> chain = versionChains.computeIfAbsent(key, <span class="fn">k</span> -&gt; <span class="kw">new</span> <span class="ty">AtomicReference</span>&lt;&gt;());
+  <span class="ty">VersionNode</span>&lt;<span class="ty">V</span>&gt; prev;
+  <span class="kw">do</span> {
+    prev = chain.get();
+    newNode.next = prev;
+  } <span class="kw">while</span> (!chain.compareAndSet(prev, newNode)); <span class="cm">// spin on contention</span>
+}</div>
+              <div class="feature-pills">
+                <span class="feature-pill">AtomicReference CAS</span>
+                <span class="feature-pill">Epoch-based GC</span>
+                <span class="feature-pill">RCU-inspired</span>
+                <span class="feature-pill">Lock-free prepend</span>
+                <span class="feature-pill">Snapshot isolation</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: SSI -->
+        <div class="expand-card" data-card="2">
+          <div class="card-header" role="button" tabindex="0" aria-expanded="false">
+            <div class="card-header-left">
+              <div class="card-number">02</div>
+              <div>
+                <div class="card-title">SSI — Serializable Snapshot Isolation</div>
+                <div class="card-subtitle">Dirty read · Write skew · Phantom detection</div>
+              </div>
+            </div>
+            <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="card-body" role="region">
+            <div class="card-content">
+              <p>
+                NexusDB implements <strong>Serializable Snapshot Isolation</strong> by tracking
+                <strong>rw-antidependency edges</strong> between concurrent transactions. A transaction
+                T1 has an rw-antidependency on T2 if T1 reads a version that T2 subsequently
+                overwrites.
+              </p>
+              <p>
+                The SSI Validator detects <strong>dangerous structures</strong> — cycles of
+                rw-antidependencies of the form T1 →rw T2 →rw T3 →... →rw T1. When such a
+                cycle is detected, the youngest transaction in the cycle is aborted to break it.
+                This handles write skew and phantoms without the performance cost of
+                predicate locks.
+              </p>
+              <div class="code-block"><span class="cm">// rw-antidependency cycle detection (simplified)</span>
+<span class="kw">boolean</span> <span class="fn">formsDangerousStructure</span>(<span class="ty">Transaction</span> txn) {
+  <span class="kw">var</span> rwIn  = antidepIn.getOrDefault(txn, emptySet());
+  <span class="kw">var</span> rwOut = antidepOut.getOrDefault(txn, emptySet());
+  <span class="cm">// Dangerous iff txn has both an incoming and outgoing rw edge</span>
+  <span class="kw">return</span> !rwIn.isEmpty() &amp;&amp; !rwOut.isEmpty();
+}</div>
+              <div class="feature-pills">
+                <span class="feature-pill">rw-antidependency tracking</span>
+                <span class="feature-pill">Cycle detection</span>
+                <span class="feature-pill">Write skew safe</span>
+                <span class="feature-pill">Phantom prevention</span>
+                <span class="feature-pill">No predicate locks</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: WAL -->
+        <div class="expand-card" data-card="3">
+          <div class="card-header" role="button" tabindex="0" aria-expanded="false">
+            <div class="card-header-left">
+              <div class="card-number">03</div>
+              <div>
+                <div class="card-title">Write-Ahead Log — ARIES Protocol</div>
+                <div class="card-subtitle">Group commit · Virtual Threads · Crash recovery</div>
+              </div>
+            </div>
+            <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="card-body" role="region">
+            <div class="card-content">
+              <p>
+                The WAL implementation follows the <strong>ARIES (Algorithm for Recovery and
+                Isolation Exploiting Semantics)</strong> protocol, maintaining LSN-ordered
+                redo and undo log records for every committed transaction. On crash recovery,
+                the engine performs Analysis → Redo → Undo passes.
+              </p>
+              <p>
+                <strong>Group commit</strong> batches multiple concurrent transactions into a
+                single fsync, dramatically reducing I/O overhead. Java 21 <strong>Virtual Threads</strong>
+                coordinate the batching window — each committing transaction parks on a
+                virtual thread until the batch is flushed, achieving throughput-latency
+                balance without thread pool starvation.
+              </p>
+              <div class="feature-pills">
+                <span class="feature-pill">ARIES redo/undo</span>
+                <span class="feature-pill">Group commit</span>
+                <span class="feature-pill">Virtual Thread batching</span>
+                <span class="feature-pill">LSN ordering</span>
+                <span class="feature-pill">Crash-safe</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: B-Tree -->
+        <div class="expand-card" data-card="4">
+          <div class="card-header" role="button" tabindex="0" aria-expanded="false">
+            <div class="card-header-left">
+              <div class="card-number">04</div>
+              <div>
+                <div class="card-title">Concurrent B-Tree</div>
+                <div class="card-subtitle">Hand-over-hand crabbing · Lock-free readers</div>
+              </div>
+            </div>
+            <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="card-body" role="region">
+            <div class="card-content">
+              <p>
+                The storage layer uses a <strong>hand-over-hand latch coupling</strong> (crab-locking)
+                strategy on the B-Tree. Writers acquire a write latch on a child before releasing
+                the parent — safe against structural modifications like splits and merges.
+                If a node is guaranteed safe (not splitting), the parent latch is released early
+                for maximum concurrency.
+              </p>
+              <p>
+                Readers use <strong>StampedLock optimistic reads</strong>: attempt a read without
+                locking, validate the stamp on exit, and retry with a pessimistic read lock only
+                on stamp conflict. Under typical workloads, readers never block writers.
+              </p>
+              <div class="feature-pills">
+                <span class="feature-pill">Crab-locking</span>
+                <span class="feature-pill">StampedLock readers</span>
+                <span class="feature-pill">ReadWriteLock nodes</span>
+                <span class="feature-pill">Safe splits/merges</span>
+                <span class="feature-pill">Lock-free traversal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: Adaptive Lock Manager -->
+        <div class="expand-card" data-card="5">
+          <div class="card-header" role="button" tabindex="0" aria-expanded="false">
+            <div class="card-header-left">
+              <div class="card-number">05</div>
+              <div>
+                <div class="card-title">Adaptive Lock Manager</div>
+                <div class="card-subtitle">Contention monitoring · CAS ↔ 2PL auto-switching</div>
+              </div>
+            </div>
+            <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="card-body" role="region">
+            <div class="card-content">
+              <p>
+                The Adaptive Lock Manager maintains a <strong>per-key-range contention ratio</strong>
+                using an exponential moving average (EMA) of CAS operation failure rates. A CAS
+                failure is a direct signal of contention — another thread modified the value
+                concurrently.
+              </p>
+              <p>
+                When the EMA exceeds a configurable threshold (default: 0.3 failures/attempt),
+                the key range is <strong>promoted to 2PL mode</strong>. Conversely, when contention
+                drops below a hysteresis band, it <strong>demotes back to CAS</strong>. The switch
+                is atomic and transparent to callers. Timeout-based deadlock detection prevents
+                indefinite blocking in 2PL mode.
+              </p>
+              <div class="code-block"><span class="cm">// EMA-based contention tracking per key range</span>
+<span class="kw">void</span> <span class="fn">recordCasResult</span>(<span class="ty">KeyRange</span> range, <span class="kw">boolean</span> success) {
+  <span class="kw">double</span> sample = success ? <span class="num">0.0</span> : <span class="num">1.0</span>;
+  contentionEma.compute(range, (k, prev) -&gt;
+    prev == <span class="kw">null</span> ? sample : EMA_ALPHA * sample + (<span class="num">1</span> - EMA_ALPHA) * prev
+  );
+  <span class="kw">if</span> (contentionEma.get(range) &gt; PROMOTE_THRESHOLD) <span class="fn">promiteTo2PL</span>(range);
+  <span class="kw">else if</span> (contentionEma.get(range) &lt; DEMOTE_THRESHOLD) <span class="fn">demoteToCas</span>(range);
+}</div>
+              <div class="feature-pills">
+                <span class="feature-pill">EMA contention ratio</span>
+                <span class="feature-pill">CAS failure signals</span>
+                <span class="feature-pill">Hysteresis band</span>
+                <span class="feature-pill">Atomic mode switch</span>
+                <span class="feature-pill">Deadlock timeout</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ===========================
+       TEST COVERAGE
+  =========================== -->
+  <section id="tests">
+    <div class="container">
+      <p class="section-label reveal">Quality Assurance</p>
+      <h2 class="section-title reveal reveal-delay-1">Test <em>Coverage</em></h2>
+      <p class="section-desc reveal reveal-delay-2">
+        Built with strict TDD — red, green, refactor. Every concurrency anomaly,
+        recovery path, and performance characteristic is verified.
+      </p>
+
+      <div class="test-grid">
+        <div class="test-card reveal">
+          <div class="test-count">18</div>
+          <div class="test-name">Anomaly Tests</div>
+          <div class="test-desc">Dirty read, write skew, phantom read, lost update — all isolation levels verified</div>
+        </div>
+        <div class="test-card reveal reveal-delay-1">
+          <div class="test-count">24</div>
+          <div class="test-name">MVCC Version Chain</div>
+          <div class="test-desc">Version prepend, snapshot visibility, epoch GC reclamation, concurrent append correctness</div>
+        </div>
+        <div class="test-card reveal reveal-delay-2">
+          <div class="test-count">21</div>
+          <div class="test-name">WAL + Recovery</div>
+          <div class="test-desc">ARIES redo/undo, group commit batching, crash-recovery correctness, LSN ordering</div>
+        </div>
+        <div class="test-card reveal reveal-delay-3">
+          <div class="test-count">29</div>
+          <div class="test-name">B-Tree Concurrent</div>
+          <div class="test-desc">Hand-over-hand correctness, concurrent splits, optimistic read validation, latch ordering</div>
+        </div>
+        <div class="test-card reveal reveal-delay-4">
+          <div class="test-count">22</div>
+          <div class="test-name">Lock Manager Adaptive</div>
+          <div class="test-desc">CAS ↔ 2PL switching under load, threshold accuracy, hysteresis behavior, deadlock timeout</div>
+        </div>
+        <div class="test-card reveal reveal-delay-1">
+          <div class="test-count">19</div>
+          <div class="test-name">JMH Benchmark Suite</div>
+          <div class="test-desc">64-thread throughput, latency percentiles, CAS vs 2PL comparison, adaptive path validation</div>
+        </div>
+      </div>
+
+      <div class="test-total-banner reveal">
+        <div class="test-total-left">
+          <div class="test-pass-dot"></div>
+          <div class="test-total-text">
+            <span>133 tests</span> passing · <span>0 failures</span> · TDD Red → Green → Refactor
+          </div>
+        </div>
+        <div class="test-total-meta">JUnit 5 · JMH · Java 21</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ===========================
+       TECH STACK
+  =========================== -->
+  <section class="tech-section" id="stack">
+    <div class="container">
+      <p class="section-label reveal">Implementation</p>
+      <h2 class="section-title reveal reveal-delay-1">Tech <em>Stack</em></h2>
+      <p class="section-desc reveal reveal-delay-2">
+        Deliberately chosen primitives — no frameworks, no ORMs. Direct control over every
+        lock acquisition, memory order, and thread lifecycle.
+      </p>
+
+      <div class="tech-tags reveal">
+        <span class="tech-tag featured">Java 21</span>
+        <span class="tech-tag">CAS / AtomicReference</span>
+        <span class="tech-tag">VarHandle</span>
+        <span class="tech-tag">ReentrantReadWriteLock</span>
+        <span class="tech-tag">StampedLock</span>
+        <span class="tech-tag featured">Virtual Threads</span>
+        <span class="tech-tag">ForkJoinPool</span>
+        <span class="tech-tag">JMH Benchmarks</span>
+        <span class="tech-tag">JUnit 5</span>
+        <span class="tech-tag">MVCC</span>
+        <span class="tech-tag">SSI</span>
+        <span class="tech-tag">ARIES WAL</span>
+        <span class="tech-tag">B-Tree</span>
+        <span class="tech-tag featured">Adaptive Lock Elision</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===========================
+       FOOTER
+  =========================== -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-text">
+          Built with <span>Java 21</span> · TDD <span>Red → Green → Refactor</span> · <span>133 tests, 0 failures</span>
+        </div>
+        <div class="footer-right">
+          <a href="https://github.com/ndqkhanh/nexus-db" target="_blank" rel="noopener">
+            github.com/ndqkhanh/nexus-db
+          </a>
+          &nbsp;·&nbsp; Nguyen Dinh Quang Khanh
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ===========================
+    // Mermaid init
+    // ===========================
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        background: '#141b27',
+        primaryColor: '#1a2540',
+        primaryTextColor: '#e8edf5',
+        primaryBorderColor: '#4A90D9',
+        lineColor: '#4A90D9',
+        secondaryColor: '#0e1420',
+        tertiaryColor: '#090d14',
+        edgeLabelBackground: '#141b27',
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: '13px',
+      },
+      flowchart: {
+        curve: 'basis',
+        nodeSpacing: 60,
+        rankSpacing: 50,
+        padding: 20,
+      },
+    });
+
+    // ===========================
+    // Expandable Cards
+    // ===========================
+    document.querySelectorAll('.expand-card').forEach(card => {
+      const header = card.querySelector('.card-header');
+      const body = card.querySelector('.card-body');
+
+      header.addEventListener('click', () => {
+        const isOpen = card.classList.contains('is-open');
+
+        // Close all
+        document.querySelectorAll('.expand-card.is-open').forEach(c => {
+          c.classList.remove('is-open');
+          c.querySelector('.card-header').setAttribute('aria-expanded', 'false');
+        });
+
+        // Open clicked if it was closed
+        if (!isOpen) {
+          card.classList.add('is-open');
+          header.setAttribute('aria-expanded', 'true');
+        }
+      });
+
+      // Keyboard accessibility
+      header.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          header.click();
+        }
+      });
+    });
+
+    // ===========================
+    // Scroll Reveal
+    // ===========================
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.08,
+      rootMargin: '0px 0px -40px 0px',
+    });
+
+    document.querySelectorAll('.reveal').forEach(el => {
+      revealObserver.observe(el);
+    });
+
+    // ===========================
+    // Stat counter animation
+    // ===========================
+    function animateCounter(el, target, suffix, duration) {
+      const start = performance.now();
+      const isDecimal = target % 1 !== 0;
+
+      function tick(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = isDecimal ? (eased * target).toFixed(1) : Math.floor(eased * target);
+        el.textContent = current + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    const counterData = [
+      { selector: '.stat-item:nth-child(1) .stat-number', value: 133, suffix: '', duration: 1400 },
+      { selector: '.stat-item:nth-child(2) .stat-number', value: 80, suffix: 'K+', duration: 1200 },
+      { selector: '.stat-item:nth-child(3) .stat-number', value: 3.2, suffix: '×', duration: 1000 },
+      { selector: '.stat-item:nth-child(4) .stat-number', value: 64, suffix: 'T', duration: 900 },
+    ];
+
+    const statsEl = document.querySelector('.stats-inner');
+    if (statsEl) {
+      const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            counterData.forEach(({ selector, value, suffix, duration }) => {
+              const el = document.querySelector(selector);
+              if (el) animateCounter(el, value, suffix, duration);
+            });
+            statsObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      statsObserver.observe(statsEl);
+    }
+
+    // ===========================
+    // Ambient glow follow cursor (subtle)
+    // ===========================
+    let rafPending = false;
+    document.addEventListener('mousemove', e => {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        const blob = document.querySelector('.ambient-1');
+        if (blob) {
+          const x = e.clientX - 300;
+          const y = e.clientY - 300;
+          blob.style.transform = `translate(${x * 0.04}px, ${y * 0.04}px)`;
+        }
+        rafPending = false;
+      });
+    });
+  </script>
+</body>
+</html>
