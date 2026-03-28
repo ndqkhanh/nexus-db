@@ -1056,6 +1056,28 @@
       }
     }
 
+    .comparison-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 48px; border-radius: 12px; border: 1px solid #1e2a3e; background: #0e1420; }
+    .comparison-table-wrapper::-webkit-scrollbar { height: 6px; }
+    .comparison-table-wrapper::-webkit-scrollbar-thumb { background: rgba(74,144,217,0.3); border-radius: 3px; }
+    table.comparison-table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 13px; font-family: 'DM Sans', sans-serif; }
+    table.comparison-table thead th { padding: 16px 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #4a5672; text-align: center; border-bottom: 1px solid #1e2a3e; background: rgba(0,0,0,0.2); white-space: nowrap; }
+    table.comparison-table thead th:first-child { text-align: left; padding-left: 24px; min-width: 220px; }
+    table.comparison-table thead th.col-project { color: #4A90D9; font-weight: 700; position: relative; }
+    table.comparison-table thead th.col-project::after { content: ''; position: absolute; bottom: 0; left: 18px; right: 18px; height: 2px; background: #4A90D9; border-radius: 1px; }
+    table.comparison-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s ease; }
+    table.comparison-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+    table.comparison-table tbody tr:last-child { border-bottom: none; }
+    table.comparison-table tbody td { padding: 14px 18px; text-align: center; color: #8a9ab8; vertical-align: middle; line-height: 1.5; }
+    table.comparison-table tbody td:first-child { text-align: left; padding-left: 24px; font-weight: 500; color: #e8edf5; font-size: 13.5px; }
+    table.comparison-table tbody td:first-child .cmp-sub { display: block; font-weight: 300; font-size: 11.5px; color: #4a5672; margin-top: 2px; }
+    .cmp-yes { color: #2ecc71; font-weight: 700; font-size: 16px; }
+    .cmp-no { color: #e74c3c; font-weight: 500; font-size: 14px; opacity: 0.7; }
+    .cmp-partial { color: #f39c12; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+    .cmp-note { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #8a9ab8; }
+    table.comparison-table tbody td.col-highlight { background: rgba(74, 144, 217, 0.06); color: #e8edf5; font-weight: 500; }
+    .comparison-legend { display: flex; gap: 24px; margin-top: 20px; padding: 0 4px; flex-wrap: wrap; }
+    .comparison-legend span { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #4a5672; display: flex; align-items: center; gap: 6px; }
+
     @media (max-width: 600px) {
       section {
         padding: 56px 0;
@@ -1094,6 +1116,9 @@
       .card-content {
         padding: 0 20px 24px;
       }
+
+      .comparison-table-wrapper { margin-top: 32px; border-radius: 8px; }
+      .comparison-legend { gap: 12px; }
     }
 
     /* ===========================
@@ -1744,6 +1769,100 @@ graph LR
       </div>
     </div>
   </section>
+
+  <section id="comparison" style="padding: 80px 0; background: #090d14;">
+  <div class="container">
+    <p class="section-label reveal" style="color: #4A90D9; font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 12px;">Competitive Landscape</p>
+    <h2 class="reveal" style="font-family: 'DM Serif Display', serif; font-size: clamp(28px, 4vw, 40px); color: #e8edf5; margin-bottom: 8px;">How NexusDB <em style="color: #4A90D9; font-style: italic;">Compares</em></h2>
+    <p class="reveal" style="color: #6b7a95; font-size: 15px; max-width: 640px; margin-bottom: 0;">Architectural choices that differentiate NexusDB from established embedded and server databases.</p>
+
+    <div class="comparison-table-wrapper reveal">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th class="col-project">NexusDB</th>
+            <th>SQLite</th>
+            <th>H2 Database</th>
+            <th>PostgreSQL</th>
+            <th>BerkeleyDB</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Embeddable (in-process)<span class="cmp-sub">No separate server process required</span></td>
+            <td class="col-highlight"><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+          </tr>
+          <tr>
+            <td>MVCC (Multi-Version Concurrency)<span class="cmp-sub">Readers never block writers</span></td>
+            <td class="col-highlight"><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-partial">MVCC-like</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+          </tr>
+          <tr>
+            <td>Adaptive Lock Elision<span class="cmp-sub">CAS ↔ 2PL auto-switching per key range</span></td>
+            <td class="col-highlight"><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+          </tr>
+          <tr>
+            <td>SSI with Anomaly Detection<span class="cmp-sub">Write skew &amp; phantom prevention</span></td>
+            <td class="col-highlight"><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-partial">2PL only</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-partial">Page-level</span></td>
+          </tr>
+          <tr>
+            <td>Epoch-Based Garbage Collection<span class="cmp-sub">No stop-the-world pauses, RCU-inspired</span></td>
+            <td class="col-highlight"><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-note">N/A</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-partial">VACUUM</span></td>
+            <td><span class="cmp-note">N/A</span></td>
+          </tr>
+          <tr>
+            <td>Concurrent Writers<span class="cmp-sub">Multiple transactions writing simultaneously</span></td>
+            <td class="col-highlight"><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-partial">Page-lock</span></td>
+          </tr>
+          <tr>
+            <td>Virtual Threads (WAL Group Commit)<span class="cmp-sub">Lightweight threading for I/O-bound commit</span></td>
+            <td class="col-highlight"><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+            <td><span class="cmp-partial">OS threads</span></td>
+            <td><span class="cmp-no">&#10007;</span></td>
+          </tr>
+          <tr>
+            <td>ARIES WAL + Crash Recovery<span class="cmp-sub">Redo/undo logging with automatic recovery</span></td>
+            <td class="col-highlight"><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-partial">Rollback journal</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+            <td><span class="cmp-yes">&#10003;</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="comparison-legend reveal">
+      <span><span class="cmp-yes">&#10003;</span> Full support</span>
+      <span><span class="cmp-partial">~</span> Partial / limited</span>
+      <span><span class="cmp-no">&#10007;</span> Not supported</span>
+    </div>
+  </div>
+</section>
 
   <script>
     // ===========================
