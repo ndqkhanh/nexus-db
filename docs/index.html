@@ -1663,7 +1663,7 @@ graph LR
         <div class="test-total-left">
           <div class="test-pass-dot"></div>
           <div class="test-total-text">
-            <span>133 tests</span> passing · <span>0 failures</span> · TDD Red → Green → Refactor
+            <span>276 tests</span> passing · <span>0 failures</span> · TDD Red → Green → Refactor
           </div>
         </div>
         <div class="test-total-meta">JUnit 5 · JMH · Java 21</div>
@@ -1711,7 +1711,7 @@ graph LR
     <div class="container">
       <div class="footer-inner">
         <div class="footer-text">
-          Built with <span>Java 21</span> · TDD <span>Red → Green → Refactor</span> · <span>133 tests, 0 failures</span>
+          Built with <span>Java 21</span> · TDD <span>Red → Green → Refactor</span> · <span>276 tests, 0 failures</span>
         </div>
         <div class="footer-right">
           <a href="https://github.com/ndqkhanh/nexus-db" target="_blank" rel="noopener">
@@ -1722,6 +1722,41 @@ graph LR
       </div>
     </div>
   </footer>
+
+  <!-- SQL & SHARDING SECTION -->
+  <section id="sql-sharding" style="padding: 80px 0; background: #090d14;">
+    <div class="container">
+      <p class="reveal" style="color: #4A90D9; font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 12px;">New: Database Fundamentals</p>
+      <h2 class="reveal" style="font-family: 'DM Serif Display', serif; font-size: clamp(28px, 4vw, 40px); color: #e8edf5; margin-bottom: 40px;">SQL Layer, Indexes &amp; <em style="color: #4A90D9; font-style: italic;">Sharding</em></h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+
+        <div class="reveal" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">SQL Parser</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Hand-written Recursive Descent</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">Tokenizer + recursive descent parser supporting SELECT, INSERT, UPDATE, DELETE, CREATE TABLE/INDEX, and EXPLAIN. Parses WHERE clauses with AND/OR conditions, ORDER BY, and column projections — no ANTLR or parser generators.</p>
+        </div>
+
+        <div class="reveal" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">Execution Plans</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Query Optimizer with EXPLAIN</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">QueryPlanner translates SQL AST into a plan tree: TableScan, IndexSeek, IndexScan, Filter, Project, Sort. Automatically chooses IndexSeek when WHERE targets an indexed column. EXPLAIN prints the plan tree for debugging.</p>
+        </div>
+
+        <div class="reveal" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">Indexes</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Clustering &amp; Non-clustering</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">Primary key B-Tree (clustering) stores rows directly. SecondaryIndex maps index key to primary key via a separate TreeMap with ReadWriteLock — maintained automatically on INSERT/UPDATE/DELETE. Catalog tracks all table schemas and index registrations.</p>
+        </div>
+
+        <div class="reveal" style="background: #141b27; border: 1px solid #1e2a3e; border-radius: 12px; padding: 28px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A90D9; margin-bottom: 8px;">Sharding</div>
+          <h3 style="font-family: 'DM Serif Display', serif; font-size: 20px; color: #e8edf5; margin-bottom: 12px;">Hash &amp; Range Partitioning</h3>
+          <p style="color: #8896ab; font-size: 14px; line-height: 1.7;">ShardRouter with pluggable strategies: HashShard (hash % N) for uniform distribution, RangeShard (binary search on boundaries) for ordered scans. ShardedStore wraps per-shard storage with fan-out scan across shards and automatic rebalance planning.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
 
   <!-- USE CASES SECTION -->
   <section id="use-cases" style="padding: 80px 0; background: #0e1420;">
